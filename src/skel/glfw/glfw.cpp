@@ -18,10 +18,13 @@ long _dwOperatingSystemVersion;
 #else
 #include <mach/mach_host.h>
 #include <sys/sysctl.h>
+#include <mach-o/dyld.h>
 #endif
 #endif
+#include <unistd.h>
 #include <errno.h>
 #include <locale.h>
+#include <limits.h>
 #include <signal.h>
 #include <stddef.h>
 #endif
@@ -100,6 +103,77 @@ RwUInt32 gGameState;
 #ifdef DETECT_JOYSTICK_MENU
 char gSelectedJoystickName[128] = "";
 #endif
+
+static bool
+HasGameDataInCurrentDir(void)
+{
+	static const char *datCandidates[] = {
+		"DATA/GTA3.DAT",
+		"DATA/GTA_VC.DAT",
+		"data/gta3.dat",
+		"data/gta_vc.dat"
+	};
+	for (size_t i = 0; i < ARRAY_SIZE(datCandidates); i++) {
+		FILE *f = fcaseopen(datCandidates[i], "rb");
+		if (f != nil) {
+			fclose(f);
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+ *****************************************************************************
+ */
+static void
+SetWorkingDirectoryToExecutable(const char *argv0)
+{
+#if !defined(_WIN32) && !defined(__SWITCH__)
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+	char exePath[PATH_MAX];
+	char oldCwd[PATH_MAX];
+	bool hadOldCwd = getcwd(oldCwd, sizeof(oldCwd)) != nil;
+
+	if (HasGameDataInCurrentDir())
+		return;
+
+	exePath[0] = '\0';
+
+#ifdef __linux__
+	ssize_t len = readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
+	if (len > 0) {
+		exePath[len] = '\0';
+	}
+#elif defined(__APPLE__)
+	uint32_t size = sizeof(exePath);
+	if (_NSGetExecutablePath(exePath, &size) == 0) {
+		char resolved[PATH_MAX];
+		if (realpath(exePath, resolved))
+			strcpy(exePath, resolved);
+	}
+#endif
+
+	if (exePath[0] == '\0' && argv0 && strchr(argv0, '/'))
+		realpath(argv0, exePath);
+	if (exePath[0] == '\0')
+		return;
+
+	char *slash = strrchr(exePath, '/');
+	if (slash == nil)
+		return;
+
+	*slash = '\0';
+	if (chdir(exePath) != 0)
+		printf("warning: failed to set cwd to executable directory: %s\n", exePath);
+	else if (!HasGameDataInCurrentDir() && hadOldCwd)
+		chdir(oldCwd);
+#else
+	(void)argv0;
+#endif
+}
 
 /*
  *****************************************************************************
@@ -1863,6 +1937,10 @@ main(int argc, char *argv[])
 #endif
 	RwV2d pos;
 	RwInt32 i;
+
+#ifndef _WIN32
+	SetWorkingDirectoryToExecutable(argc > 0 ? argv[0] : nil);
+#endif
 
 #ifdef USE_CUSTOM_ALLOCATOR
 	InitMemoryMgr();

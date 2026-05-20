@@ -1017,14 +1017,10 @@ DebugMenuProcess(void)
 	CPad *pad = CPad::GetPad(0);
 	bool startPressed = !!pad->NewState.Start;
 	bool selectPressed = !!pad->NewState.Select;
-	bool circlePressed = !!pad->NewState.Circle;
 	bool startJustPressed = !!(pad->NewState.Start && !pad->OldState.Start);
 	bool selectJustPressed = !!(pad->NewState.Select && !pad->OldState.Select);
-	bool circleJustPressed = !!(pad->NewState.Circle && !pad->OldState.Circle);
 	bool padToggleCombo =
-		(selectJustPressed && circlePressed) || (circleJustPressed && selectPressed) ||
-		(startJustPressed && selectPressed) || (selectJustPressed && startPressed) ||
-		(startJustPressed && circlePressed) || (circleJustPressed && startPressed);
+		(startJustPressed && selectPressed) || (selectJustPressed && startPressed);
 
 	if(CTRLJUSTDOWN('M') || padToggleCombo){
 		menuOn = !menuOn;
@@ -1033,8 +1029,6 @@ DebugMenuProcess(void)
 		pad->NewState.Start = 0;
 		pad->OldState.Select = 0;
 		pad->NewState.Select = 0;
-		pad->OldState.Circle = 0;
-		pad->NewState.Circle = 0;
 	}
 	if(!menuOn)
 		return;

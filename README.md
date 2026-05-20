@@ -14,7 +14,7 @@ Fork-specific changes (currently GTA III focused):
 * Camera now has matching vertical and horizontal speed.
 * Mouse is generally slower, allowing finer sensitivity tuning.
 * Particles are decoupled from framerate (fixed-rate style hack).
-* Debug menu can be opened with `Ctrl+M` or `Select+B` (gamepad).
+* Debug menu can be opened with `Ctrl+M` or `Start+Select` (gamepad).
 * Added `build_deck.sh` for a Steam Deck oriented build flow with Conan 1.x and a guard that checks `DEBUGMENU` is enabled.
 
 If you are here for a controller-friendly debug build of GTA III, this is the point of this fork.
@@ -61,7 +61,7 @@ Some of them can be toggled at runtime, some cannot.
 * Fixed a lot of smaller and bigger bugs
 * User files (saves and settings) stored in GTA root directory
 * Settings stored in re3.ini file instead of gta3.set
-* Debug menu to do and change various things (Ctrl-M or Select+B to open)
+* Debug menu to do and change various things (Ctrl-M or Start+Select to open)
 * Debug camera (Ctrl-B to toggle)
 * Rotatable camera
 * XInput controller support (Windows)
@@ -149,6 +149,15 @@ If you ever hit `fatal error: stdint.h: No such file or directory`, repair the C
 ```
 sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs
 ```
+
+Running from Steam with a native Linux build:
+```
+# In Steam game properties for GTA III:
+# Compatibility: OFF (do not force Proton)
+# Launch Options:
+cd "/path/to/GTA3" && "/path/to/re3"
+```
+Do not replace `gta3.exe` with the Linux `re3` binary. `gta3.exe` is used by Proton/Windows runtime, while `re3` built here is a native Linux executable.
 </details>
 
 <details><summary>Steam Deck: GTA VC (`miami`) branch</summary>
