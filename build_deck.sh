@@ -23,6 +23,7 @@ require_cmd() {
 echo "[1/7] Checking prerequisites..."
 require_cmd git
 require_cmd python3
+require_cmd cc
 require_cmd c++
 require_cmd pkg-config
 PKG_CONFIG_BIN="/usr/bin/pkg-config"
@@ -36,6 +37,25 @@ unset PKG_CONFIG_SYSROOT_DIR
 unset PKG_CONFIG_DIR
 export PKG_CONFIG_LIBDIR="/usr/lib/pkgconfig:/usr/share/pkgconfig"
 export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig"
+
+if [[ ! -f /usr/include/stdint.h ]]; then
+	echo "error: /usr/include/stdint.h is missing."
+	echo "Your C runtime headers are broken/incomplete."
+	echo "Repair with:"
+	echo "  sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs"
+	exit 1
+fi
+
+if ! printf '#include <stdint.h>\n' | cc -x c -E - >/dev/null 2>&1; then
+	echo "error: C compiler cannot preprocess <stdint.h>."
+	echo "Likely causes: broken glibc headers or a polluted build env (sysroot/nostdinc flags)."
+	echo "Repair system headers:"
+	echo "  sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs"
+	echo "Then verify:"
+	echo "  /usr/bin/cc -v -E -x c /dev/null"
+	echo "  /usr/bin/cc -x c -E - <<< '#include <stdint.h>'"
+	exit 1
+fi
 
 declare -a REQUIRED_PC_MODULES=(
 	gl

@@ -143,6 +143,11 @@ If your Deck image is missing development packages, install them once:
 ```
 sudo pacman -Syu --needed pkgconf libglvnd mesa libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm libfontenc libice libsm libxaw libxcomposite libxdamage libxfixes libxkbfile libxmu libxpm libxrender libxres libxss libxt libxtst libxv xcb-util xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm util-linux-libs xorgproto xtrans
 ```
+
+If you ever hit `fatal error: stdint.h: No such file or directory`, repair the C runtime headers:
+```
+sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs
+```
 </details>
 
 <details><summary>MacOS Premake</summary>
