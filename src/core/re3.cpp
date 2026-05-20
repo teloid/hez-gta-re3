@@ -45,6 +45,7 @@
 #include "Population.h"
 #include "IniFile.h"
 #include "Zones.h"
+#include "Pools.h"
 
 #include "crossplatform.h"
 
@@ -792,6 +793,236 @@ ResetCamStatics(void)
 	TheCamera.Cams[TheCamera.ActiveCam].ResetStatics = true;
 }
 
+static bool bDebugGodMode = false;
+static bool bDebugFlyMode = false;
+static bool bDebugFlyNoClip = false;
+static float fDebugFlySpeed = 1.5f;
+
+struct SavedEntityPhysicsState
+{
+	int32 handle;
+	bool isVehicle;
+	bool usesCollision;
+	bool affectedByGravity;
+	bool valid;
+};
+
+struct SavedGodModeState
+{
+	bool canBeDamaged;
+	bool bulletProof;
+	bool fireProof;
+	bool collisionProof;
+	bool meleeProof;
+	bool explosionProof;
+	bool valid;
+};
+
+static SavedEntityPhysicsState gFlySavedState = { -1, false, false, false, false };
+static SavedGodModeState gGodPedSavedState = { false, false, false, false, false, false, false };
+static SavedGodModeState gGodVehSavedState = { false, false, false, false, false, false, false };
+static int32 gGodVehicleHandle = -1;
+
+static CPhysical *
+ResolveSavedPhysicalStateEntity(const SavedEntityPhysicsState &saved)
+{
+	if(!saved.valid || saved.handle < 0)
+		return nil;
+	return saved.isVehicle ?
+		(CPhysical*)CPools::GetVehicle(saved.handle) :
+		(CPhysical*)CPools::GetPed(saved.handle);
+}
+
+static void
+RestoreGodModeState(SavedGodModeState &saved, CEntity *entity)
+{
+	if(!saved.valid)
+		return;
+	if(entity == nil){
+		saved.valid = false;
+		return;
+	}
+
+	if(entity->IsPed())
+		((CPlayerPed*)entity)->m_bCanBeDamaged = saved.canBeDamaged;
+	else if(entity->IsVehicle())
+		((CVehicle*)entity)->bCanBeDamaged = saved.canBeDamaged;
+
+	entity->bBulletProof = saved.bulletProof;
+	entity->bFireProof = saved.fireProof;
+	entity->bCollisionProof = saved.collisionProof;
+	entity->bMeleeProof = saved.meleeProof;
+	entity->bExplosionProof = saved.explosionProof;
+	saved.valid = false;
+}
+
+static void
+SaveGodModeState(SavedGodModeState &saved, CEntity *entity)
+{
+	if(entity == nil)
+		return;
+
+	if(entity->IsPed())
+		saved.canBeDamaged = ((CPlayerPed*)entity)->m_bCanBeDamaged;
+	else if(entity->IsVehicle())
+		saved.canBeDamaged = ((CVehicle*)entity)->bCanBeDamaged;
+
+	saved.bulletProof = entity->bBulletProof;
+	saved.fireProof = entity->bFireProof;
+	saved.collisionProof = entity->bCollisionProof;
+	saved.meleeProof = entity->bMeleeProof;
+	saved.explosionProof = entity->bExplosionProof;
+	saved.valid = true;
+}
+
+static void
+RestoreFlyState(void)
+{
+	CPhysical *savedEntity = ResolveSavedPhysicalStateEntity(gFlySavedState);
+	if(!gFlySavedState.valid || savedEntity == nil){
+		gFlySavedState.valid = false;
+		gFlySavedState.handle = -1;
+		return;
+	}
+
+	savedEntity->bUsesCollision = gFlySavedState.usesCollision;
+	savedEntity->bAffectedByGravity = gFlySavedState.affectedByGravity;
+	gFlySavedState.valid = false;
+	gFlySavedState.handle = -1;
+}
+
+static void
+ApplyDebugGodMode(CPlayerPed *player)
+{
+	if(player == nil)
+		return;
+
+	if(!bDebugGodMode){
+		RestoreGodModeState(gGodPedSavedState, player);
+		RestoreGodModeState(gGodVehSavedState, gGodVehicleHandle >= 0 ? (CEntity*)CPools::GetVehicle(gGodVehicleHandle) : nil);
+		gGodVehicleHandle = -1;
+		return;
+	}
+
+	if(!gGodPedSavedState.valid)
+		SaveGodModeState(gGodPedSavedState, player);
+
+	player->m_bCanBeDamaged = false;
+	player->bBulletProof = true;
+	player->bFireProof = true;
+	player->bCollisionProof = true;
+	player->bMeleeProof = true;
+	player->bExplosionProof = true;
+	player->m_fHealth = Max(player->m_fHealth, 100.0f);
+	player->m_fArmour = Max(player->m_fArmour, 100.0f);
+
+	CVehicle *veh = FindPlayerVehicle();
+	CVehicle *savedVehicle = gGodVehicleHandle >= 0 ? CPools::GetVehicle(gGodVehicleHandle) : nil;
+	if(veh != savedVehicle){
+		RestoreGodModeState(gGodVehSavedState, savedVehicle);
+		gGodVehicleHandle = -1;
+		if(veh){
+			SaveGodModeState(gGodVehSavedState, veh);
+			gGodVehicleHandle = CPools::GetVehicleRef(veh);
+		}
+	}
+
+	savedVehicle = gGodVehicleHandle >= 0 ? CPools::GetVehicle(gGodVehicleHandle) : nil;
+	if(savedVehicle){
+		savedVehicle->bCanBeDamaged = false;
+		savedVehicle->bBulletProof = true;
+		savedVehicle->bFireProof = true;
+		savedVehicle->bCollisionProof = true;
+		savedVehicle->bMeleeProof = true;
+		savedVehicle->bExplosionProof = true;
+		savedVehicle->m_fHealth = Max(savedVehicle->m_fHealth, 1000.0f);
+	}
+}
+
+static void
+ApplyDebugFlyMode(CPlayerPed *player)
+{
+	if(player == nil){
+		RestoreFlyState();
+		return;
+	}
+
+	if(!bDebugFlyMode){
+		RestoreFlyState();
+		return;
+	}
+
+	CPad *pad = CPad::GetPad(0);
+	CVehicle *veh = FindPlayerVehicle();
+	CPhysical *controlled = veh ? (CPhysical*)veh : (CPhysical*)player;
+	CPhysical *savedControlled = ResolveSavedPhysicalStateEntity(gFlySavedState);
+
+	if(controlled != savedControlled){
+		RestoreFlyState();
+		gFlySavedState.handle = veh ? CPools::GetVehicleRef(veh) : CPools::GetPedRef(player);
+		gFlySavedState.isVehicle = veh != nil;
+		gFlySavedState.usesCollision = controlled->bUsesCollision;
+		gFlySavedState.affectedByGravity = controlled->bAffectedByGravity;
+		gFlySavedState.valid = true;
+	}
+
+	controlled->bAffectedByGravity = false;
+	controlled->bUsesCollision = bDebugFlyNoClip ? false : gFlySavedState.usesCollision;
+
+	if(pad->ArePlayerControlsDisabled()){
+		controlled->SetMoveSpeed(0.0f, 0.0f, 0.0f);
+		controlled->SetTurnSpeed(0.0f, 0.0f, 0.0f);
+		if(!veh)
+			player->bIsInTheAir = false;
+		return;
+	}
+
+	float leftRight = pad->GetPedWalkLeftRight() / 128.0f;
+	float forwardBack = -pad->GetPedWalkUpDown() / 128.0f;
+	float upDown = 0.0f;
+	if(pad->GetRightShoulder1() || pad->GetChar('E'))
+		upDown += 1.0f;
+	if(pad->GetLeftShoulder1() || pad->GetChar('Q'))
+		upDown -= 1.0f;
+
+	CVector camForward = TheCamera.GetForward();
+	camForward.z = 0.0f;
+	if(camForward.MagnitudeSqr2D() > 0.0f)
+		camForward.Normalise2D();
+	else
+		camForward = CVector(0.0f, 1.0f, 0.0f);
+
+	CVector camRight = TheCamera.GetRight();
+	camRight.z = 0.0f;
+	if(camRight.MagnitudeSqr2D() > 0.0f)
+		camRight.Normalise2D();
+	else
+		camRight = CVector(1.0f, 0.0f, 0.0f);
+
+	CVector moveDir = camForward * forwardBack + camRight * leftRight + CVector(0.0f, 0.0f, upDown);
+	if(moveDir.MagnitudeSqr() > 1.0f)
+		moveDir.Normalise();
+
+	float speed = fDebugFlySpeed * CTimer::GetTimeStep();
+	if(pad->GetSprint() || pad->GetShift())
+		speed *= 2.0f;
+
+	controlled->SetPosition(controlled->GetPosition() + moveDir * speed);
+	controlled->SetMoveSpeed(0.0f, 0.0f, 0.0f);
+	controlled->SetTurnSpeed(0.0f, 0.0f, 0.0f);
+
+	if(!veh)
+		player->bIsInTheAir = false;
+}
+
+void
+DebugMenuProcessGameplayModes(void)
+{
+	CPlayerPed *player = FindPlayerPed();
+	ApplyDebugGodMode(player);
+	ApplyDebugFlyMode(player);
+}
+
 #ifdef MISSION_SWITCHER
 int8 nextMissionToSwitch = 0;
 static void
@@ -1058,6 +1289,12 @@ extern bool gbRenderWorld2;
 		DebugMenuAddCmd("Game", "Place Car on Road", PlaceOnRoad);
 		DebugMenuAddCmd("Game", "Switch car collision", SwitchCarCollision);
 		DebugMenuAddCmd("Game", "Toggle Comedy Controls", ToggleComedy);
+		DebugMenuAddVarBool8("Game", "God Mode", &bDebugGodMode, nil);
+		DebugMenuAddVarBool8("Game", "Fly Mode", &bDebugFlyMode, nil);
+		DebugMenuAddVarBool8("Game", "Fly Noclip", &bDebugFlyNoClip, nil);
+		DebugMenuAddVar("Game", "Fly Speed", &fDebugFlySpeed, nil, 0.1f, 0.2f, 20.0f);
+		DebugMenuAddCmd("Game", "Fly Controls: LS move, R1/L1 up/down", nil);
+		DebugMenuAddCmd("Game", "Fly Boost: Sprint / Shift", nil);
 
 		DebugMenuAddVarBool8("Game", "Toggle popping heads on headshot", &CPed::bPopHeadsOnHeadshot, nil);
 

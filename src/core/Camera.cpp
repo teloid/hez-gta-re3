@@ -67,6 +67,43 @@ bool CCamera::m_bUseMouse3rdPerson = false;
 #endif
 bool bDidWeProcessAnyCinemaCam;
 
+static bool
+IsDebugCamModeAllowed(int16 mode)
+{
+	switch(mode){
+	case CCam::MODE_NONE:
+	case CCam::MODE_TOPDOWN:
+	case CCam::MODE_GTACLASSIC:
+	case CCam::MODE_BEHINDCAR:
+	case CCam::MODE_FOLLOWPED:
+	case CCam::MODE_AIMING:
+	case CCam::MODE_DEBUG:
+	case CCam::MODE_SNIPER:
+	case CCam::MODE_ROCKETLAUNCHER:
+	case CCam::MODE_MODELVIEW:
+	case CCam::MODE_BILL:
+	case CCam::MODE_SYPHON:
+	case CCam::MODE_CIRCLE:
+	case CCam::MODE_WHEELCAM:
+	case CCam::MODE_FIXED:
+	case CCam::MODE_1STPERSON:
+	case CCam::MODE_CAM_ON_A_STRING:
+	case CCam::MODE_FOLLOW_PED_WITH_BIND:
+	case CCam::MODE_CHRIS:
+	case CCam::MODE_BEHINDBOAT:
+	case CCam::MODE_TOP_DOWN_PED:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static int16
+GetSafeDebugCamMode(int16 mode)
+{
+	return IsDebugCamModeAllowed(mode) ? mode : CCam::MODE_NONE;
+}
+
 #ifdef IMPROVED_CAMERA
 #define KEYJUSTDOWN(k) ControlsManager.GetIsKeyboardKeyJustDown((RsKeyCodes)k)
 #define KEYDOWN(k) ControlsManager.GetIsKeyboardKeyDown((RsKeyCodes)k)
@@ -1340,8 +1377,11 @@ CCamera::CamControl(void)
 
 	m_bIdleOn = false;
 
-	if(DebugCamMode)
-		ReqMode = DebugCamMode;
+	int16 safeDebugCamMode = GetSafeDebugCamMode(DebugCamMode);
+	if(safeDebugCamMode != DebugCamMode)
+		DebugCamMode = safeDebugCamMode;
+	if(safeDebugCamMode != CCam::MODE_NONE)
+		ReqMode = safeDebugCamMode;
 
 
 	// Process arrested player
@@ -3132,8 +3172,11 @@ CCamera::Process_Train_Camera_Control(void)
 	}
 #ifdef FIX_BUGS
 	// Not really a bug but be nice and respect the debug mode
-	if(DebugCamMode){
-		TakeControl(target, DebugCamMode, JUMP_CUT, CAMCONTROL_SCRIPT);
+	int16 safeDebugCamMode = GetSafeDebugCamMode(DebugCamMode);
+	if(safeDebugCamMode != DebugCamMode)
+		DebugCamMode = safeDebugCamMode;
+	if(safeDebugCamMode != CCam::MODE_NONE){
+		TakeControl(target, safeDebugCamMode, JUMP_CUT, CAMCONTROL_SCRIPT);
 		return;
 	}
 #endif

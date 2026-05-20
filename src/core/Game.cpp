@@ -91,6 +91,10 @@
 #include "TexturePools.h"
 #endif
 
+#ifdef DEBUGMENU
+extern void DebugMenuProcessGameplayModes(void);
+#endif
+
 eLevelName CGame::currLevel;
 bool CGame::bDemoMode = true;
 bool CGame::nastyGame = true;
@@ -1038,6 +1042,9 @@ void CGame::Process(void)
 		CRecordDataForGame::SaveOrRetrieveDataForThisFrame();
 		CRecordDataForChase::SaveOrRetrieveDataForThisFrame();
 		CPad::DoCheats();
+#ifdef DEBUGMENU
+		DebugMenuProcessGameplayModes();
+#endif
 		CClock::Update();
 		CWeather::Update();
 
