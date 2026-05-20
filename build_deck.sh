@@ -20,14 +20,25 @@ require_cmd git
 require_cmd python3
 require_cmd c++
 require_cmd pkg-config
+PKG_CONFIG_BIN="/usr/bin/pkg-config"
+if [[ ! -x "$PKG_CONFIG_BIN" ]]; then
+	PKG_CONFIG_BIN="$(command -v pkg-config)"
+fi
 
-# Steam Deck builds are native Linux builds; a user-custom PKG_CONFIG_LIBDIR
-# can hide system pkg-config files like /usr/lib/pkgconfig/gl.pc.
-unset PKG_CONFIG_LIBDIR
-export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+# Steam Deck builds are native Linux builds; user shell/toolchain overrides can
+# hide system pkg-config files like /usr/lib/pkgconfig/gl.pc.
+export PKG_CONFIG_LIBDIR="/usr/lib/pkgconfig:/usr/share/pkgconfig"
+export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig"
 
-if ! pkg-config --exists gl; then
+if ! "$PKG_CONFIG_BIN" --exists gl; then
 	echo "error: pkg-config cannot find 'gl' (gl.pc)."
+	echo "pkg-config binary: $PKG_CONFIG_BIN"
+	echo "pkg-config default pc_path: $("$PKG_CONFIG_BIN" --variable pc_path pkg-config 2>/dev/null || echo '<unknown>')"
+	echo "PKG_CONFIG_LIBDIR: ${PKG_CONFIG_LIBDIR:-<unset>}"
+	echo "PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-<unset>}"
+	if [[ -f /usr/lib/pkgconfig/gl.pc ]]; then
+		echo "gl.pc exists at /usr/lib/pkgconfig/gl.pc"
+	fi
 	echo "Install OpenGL development packages and retry:"
 	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf"
 	exit 1
