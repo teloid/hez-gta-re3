@@ -65,6 +65,12 @@ if (( ${#MISSING_PC_MODULES[@]} > 0 )); then
 	fi
 	if [[ -f /usr/lib/pkgconfig/x11.pc ]]; then
 		echo "x11.pc exists at /usr/lib/pkgconfig/x11.pc"
+	else
+		echo "x11.pc is missing on disk at /usr/lib/pkgconfig/x11.pc"
+		echo "Tip: pacman package DB may be out of sync with filesystem."
+		echo "Run integrity check and force reinstall WITHOUT --needed."
+		echo "  sudo pacman -Qkk libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm"
+		echo "  sudo pacman -S --overwrite '*' pkgconf libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans"
 	fi
 	echo "Install Linux/OpenGL/X11 development packages and retry:"
 	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans"
