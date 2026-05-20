@@ -138,6 +138,7 @@ For Steam Deck, this fork also provides:
 ./build_deck.sh --check-only
 ```
 This script initializes submodules, installs Conan 1.x in a local virtualenv, validates required `pkg-config` modules for OpenGL/X11/XCB, and verifies the build config keeps `DEBUGMENU` enabled. Use `--check-only` to validate system dependencies without starting a build.
+On `master`, output binary is `re3` (GTA III).
 
 If your Deck image is missing development packages, install them once:
 ```
@@ -154,6 +155,7 @@ sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs
 
 From this fork root, switch to `miami`, apply the prepared patch, and build:
 ```bash
+git remote get-url upstream >/dev/null 2>&1 || git remote add upstream https://github.com/Hezkore/hez-gta-re3.git
 git fetch upstream miami
 git switch -c miami --track upstream/miami
 patch -p1 < patch_miami_debugmenu_deck.patch
@@ -169,6 +171,17 @@ What this patch does on `miami`:
 * Updates `miami` README with Steam Deck build instructions.
 
 Output binary is `reVC` (Vice City).
+</details>
+
+<details><summary>Recovery: if patch was run on wrong branch</summary>
+
+If you accidentally ran `patch_miami_debugmenu_deck.patch` on `master` and got `.rej` files/prompts:
+```bash
+git restore README.md src/core/Frontend.cpp src/extras/debugmenu.cpp build_deck.sh
+rm -f README.md.rej src/core/Frontend.cpp.rej src/extras/debugmenu.cpp.rej
+```
+
+Then follow the `miami` section above exactly (ensure you are on `miami` first).
 </details>
 
 <details><summary>MacOS Premake</summary>
