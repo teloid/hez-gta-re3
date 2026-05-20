@@ -55,6 +55,11 @@ if (( ${#MISSING_PC_MODULES[@]} > 0 )); then
 	echo "pkg-config default pc_path: $("$PKG_CONFIG_BIN" --variable pc_path pkg-config 2>/dev/null || echo '<unknown>')"
 	echo "PKG_CONFIG_LIBDIR: ${PKG_CONFIG_LIBDIR:-<unset>}"
 	echo "PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-<unset>}"
+	echo "pkg-config detailed errors:"
+	for module in "${MISSING_PC_MODULES[@]}"; do
+		echo "  [$module]"
+		"$PKG_CONFIG_BIN" --print-errors --exists "$module" || true
+	done
 	if [[ -f /usr/lib/pkgconfig/gl.pc ]]; then
 		echo "gl.pc exists at /usr/lib/pkgconfig/gl.pc"
 	fi
@@ -62,7 +67,7 @@ if (( ${#MISSING_PC_MODULES[@]} > 0 )); then
 		echo "x11.pc exists at /usr/lib/pkgconfig/x11.pc"
 	fi
 	echo "Install Linux/OpenGL/X11 development packages and retry:"
-	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto"
+	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans"
 	exit 1
 fi
 
