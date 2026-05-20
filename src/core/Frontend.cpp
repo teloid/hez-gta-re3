@@ -987,6 +987,14 @@ CMenuManager::DisplayHelperText()
 				CFont::SetColor(CRGBA(255, 255, 255, 255));
 				CFont::PrintString(MENU_X_LEFT_ALIGNED(HELPER_TEXT_LEFT_MARGIN), SCREEN_SCALE_FROM_BOTTOM(HELPER_TEXT_BOTTOM_MARGIN), TheText.Get("FET_MIG"));
 			}
+#ifdef DEBUGMENU
+			if (m_nCurrScreen == MENUPAGE_OPTIONS) {
+				wchar debugHint[64];
+				AsciiToUnicode("DEBUG MENU: Ctrl+M or Select+B", debugHint);
+				CFont::SetColor(CRGBA(255, 255, 255, 255));
+				CFont::PrintString(MENU_X_LEFT_ALIGNED(HELPER_TEXT_LEFT_MARGIN), SCREEN_SCALE_FROM_BOTTOM(HELPER_TEXT_BOTTOM_MARGIN + 14.0f), debugHint);
+			}
+#endif
 			break;
 		}
 		case 1:
