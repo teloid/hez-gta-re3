@@ -3,6 +3,14 @@
 [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FGTAmodding%2Fre3%2Fbadge%3Fref%3Dmiami&style=flat)](https://actions-badge.atrox.dev/GTAmodding/re3/goto?ref=miami)
 <a href="https://discord.gg/RFNbjsUMGg"><img src="https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=flat" /></a>
 
+## About this fork of reVC
+This fork focuses on controller-friendly debug workflow and practical Steam Deck builds.
+
+Fork-specific changes:
+* Debug menu can be opened with `Ctrl+M` or `Select+B` (gamepad).
+* Options screen shows helper hint: `DEBUG MENU: Ctrl+M or Select+B`.
+* Includes `build_deck.sh` for Steam Deck build/dependency checks.
+
 ## Intro
 
 In this repository you'll find the fully reversed source code for GTA III ([master](https://github.com/GTAmodding/re3/tree/master/) branch) and GTA VC ([miami](https://github.com/GTAmodding/re3/tree/miami/) branch).
@@ -41,7 +49,7 @@ Some of them can be toggled at runtime, some cannot.
 * Fixed a lot of smaller and bigger bugs
 * User files (saves and settings) stored in GTA root directory
 * Settings stored in reVC.ini file instead of gta_vc.set
-* Debug menu to do and change various things (Ctrl-M to open)
+* Debug menu to do and change various things (Ctrl-M or Select+B to open)
 * Debug camera (Ctrl-B to toggle)
 * Rotatable camera
 * XInput controller support (Windows)
@@ -87,7 +95,7 @@ Sorry for the inconvenience.
 
 When using premake, you may want to point GTA_VC_RE_DIR environment variable to GTA Vice City root folder if you want the executable to be moved there via post-build script.
 
-Clone the repository with `git clone --recursive -b miami https://github.com/GTAmodding/re3.git reVC`. Then `cd reVC` into the cloned repository.
+Clone this fork with `git clone --recursive https://github.com/hezkore/re3.git`. Then `cd re3` and switch to `miami`.
 
 <details><summary>Linux Premake</summary>
 
@@ -104,6 +112,23 @@ mkdir build
 cd build
 conan install .. reVC/master@ -if build -o reVC:audio=openal -o librw:platform=gl3 -o librw:gl3_gfxlib=glfw --build missing -s reVC:build_type=RelWithDebInfo -s librw:build_type=RelWithDebInfo
 conan build .. -if build -bf build -pf package
+```
+
+For Steam Deck:
+```
+./build_deck.sh --check-only
+./build_deck.sh
+```
+Output binary on `miami`: `reVC`.
+
+If you need the Deck dev dependencies once:
+```
+sudo pacman -Syu --needed pkgconf libglvnd mesa libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm libfontenc libice libsm libxaw libxcomposite libxdamage libxfixes libxkbfile libxmu libxpm libxrender libxres libxss libxt libxtst libxv xcb-util xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm util-linux-libs xorgproto xtrans
+```
+
+If you ever hit `fatal error: stdint.h: No such file or directory`:
+```
+sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs
 ```
 </details>
 

@@ -878,6 +878,13 @@ CMenuManager::DisplayHelperText(char *text)
 
 			CFont::PrintString(SCREEN_STRETCH_FROM_RIGHT(HELPER_TEXT_RIGHT_MARGIN), SCREEN_SCALE_FROM_BOTTOM(HELPER_TEXT_BOTTOM_MARGIN),
 				m_nCurrScreen != MENUPAGE_STATS ? TheText.Get("FET_MIG") : TheText.Get("FEH_SSA"));
+#ifdef DEBUGMENU
+			if (m_nCurrScreen == MENUPAGE_OPTIONS) {
+				wchar debugHint[64];
+				AsciiToUnicode("DEBUG MENU: Ctrl+M or Select+B", debugHint);
+				CFont::PrintString(SCREEN_STRETCH_FROM_RIGHT(HELPER_TEXT_RIGHT_MARGIN), SCREEN_SCALE_FROM_BOTTOM(HELPER_TEXT_BOTTOM_MARGIN + 14.0f), debugHint);
+			}
+#endif
 
 			break;
 	}
