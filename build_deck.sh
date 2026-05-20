@@ -27,11 +27,30 @@ fi
 
 # Steam Deck builds are native Linux builds; user shell/toolchain overrides can
 # hide system pkg-config files like /usr/lib/pkgconfig/gl.pc.
+unset PKG_CONFIG_SYSROOT_DIR
+unset PKG_CONFIG_DIR
 export PKG_CONFIG_LIBDIR="/usr/lib/pkgconfig:/usr/share/pkgconfig"
 export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig"
 
-if ! "$PKG_CONFIG_BIN" --exists gl; then
-	echo "error: pkg-config cannot find 'gl' (gl.pc)."
+declare -a REQUIRED_PC_MODULES=(
+	gl
+	x11
+	xext
+	xrandr
+	xi
+	xcursor
+	xinerama
+	xxf86vm
+)
+declare -a MISSING_PC_MODULES=()
+for module in "${REQUIRED_PC_MODULES[@]}"; do
+	if ! "$PKG_CONFIG_BIN" --exists "$module"; then
+		MISSING_PC_MODULES+=("$module")
+	fi
+done
+
+if (( ${#MISSING_PC_MODULES[@]} > 0 )); then
+	echo "error: pkg-config is missing required module(s): ${MISSING_PC_MODULES[*]}"
 	echo "pkg-config binary: $PKG_CONFIG_BIN"
 	echo "pkg-config default pc_path: $("$PKG_CONFIG_BIN" --variable pc_path pkg-config 2>/dev/null || echo '<unknown>')"
 	echo "PKG_CONFIG_LIBDIR: ${PKG_CONFIG_LIBDIR:-<unset>}"
@@ -39,8 +58,11 @@ if ! "$PKG_CONFIG_BIN" --exists gl; then
 	if [[ -f /usr/lib/pkgconfig/gl.pc ]]; then
 		echo "gl.pc exists at /usr/lib/pkgconfig/gl.pc"
 	fi
-	echo "Install OpenGL development packages and retry:"
-	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf"
+	if [[ -f /usr/lib/pkgconfig/x11.pc ]]; then
+		echo "x11.pc exists at /usr/lib/pkgconfig/x11.pc"
+	fi
+	echo "Install Linux/OpenGL/X11 development packages and retry:"
+	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto"
 	exit 1
 fi
 

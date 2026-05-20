@@ -136,7 +136,12 @@ For Steam Deck, this fork also provides:
 ```
 ./build_deck.sh
 ```
-This script initializes submodules, installs Conan 1.x in a local virtualenv, and verifies the build config keeps `DEBUGMENU` enabled.
+This script initializes submodules, installs Conan 1.x in a local virtualenv, validates required `pkg-config` modules for OpenGL/X11, and verifies the build config keeps `DEBUGMENU` enabled.
+
+If your Deck image is missing development packages, install them once:
+```
+sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto
+```
 </details>
 
 <details><summary>MacOS Premake</summary>
