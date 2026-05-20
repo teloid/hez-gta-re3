@@ -135,12 +135,13 @@ conan build .. -if build -bf build -pf package
 For Steam Deck, this fork also provides:
 ```
 ./build_deck.sh
+./build_deck.sh --check-only
 ```
-This script initializes submodules, installs Conan 1.x in a local virtualenv, validates required `pkg-config` modules for OpenGL/X11, and verifies the build config keeps `DEBUGMENU` enabled.
+This script initializes submodules, installs Conan 1.x in a local virtualenv, validates required `pkg-config` modules for OpenGL/X11/XCB, and verifies the build config keeps `DEBUGMENU` enabled. Use `--check-only` to validate system dependencies without starting a build.
 
 If your Deck image is missing development packages, install them once:
 ```
-sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans
+sudo pacman -Syu --needed pkgconf libglvnd mesa libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm libfontenc libice libsm libxaw libxcomposite libxdamage libxfixes libxkbfile libxmu libxpm libxrender libxres libxss libxt libxtst libxv xcb-util xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm util-linux-libs xorgproto xtrans
 ```
 </details>
 

@@ -7,6 +7,11 @@ cd "$SCRIPT_DIR"
 BUILD_DIR="${BUILD_DIR:-build}"
 BUILD_TYPE="${BUILD_TYPE:-RelWithDebInfo}"
 VENV_DIR="${VENV_DIR:-.venv-deck-build}"
+CHECK_ONLY=0
+
+if [[ "${1:-}" == "--check-only" ]]; then
+	CHECK_ONLY=1
+fi
 
 require_cmd() {
 	if ! command -v "$1" >/dev/null 2>&1; then
@@ -35,19 +40,63 @@ export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig"
 declare -a REQUIRED_PC_MODULES=(
 	gl
 	x11
-	xcb
+	x11-xcb
+	fontenc
+	ice
+	sm
 	xau
+	xaw7
+	xcomposite
+	xcursor
+	xdamage
 	xdmcp
 	xext
-	xrandr
+	xfixes
 	xi
-	xcursor
 	xinerama
+	xkbfile
+	xmu
+	xmuu
+	xpm
+	xrandr
+	xrender
+	xres
+	xscrnsaver
+	xt
+	xtst
+	xv
 	xxf86vm
+	xcb-xkb
+	xcb-icccm
+	xcb-image
+	xcb-keysyms
+	xcb-randr
+	xcb-render
+	xcb-renderutil
+	xcb-shape
+	xcb-shm
+	xcb-sync
+	xcb-xfixes
+	xcb-xinerama
+	xcb
+	xcb-atom
+	xcb-aux
+	xcb-event
+	xcb-util
+	xcb-dri3
+	xcb-cursor
+	xcb-dri2
+	xcb-glx
+	xcb-present
+	xcb-composite
+	xcb-ewmh
+	xcb-res
+	uuid
 )
 declare -a MISSING_PC_MODULES=()
 for module in "${REQUIRED_PC_MODULES[@]}"; do
-	if ! "$PKG_CONFIG_BIN" --exists "$module"; then
+	# Match Conan xorg/system probing behavior to catch transitive failures.
+	if ! "$PKG_CONFIG_BIN" --print-errors --cflags-only-other "$module" >/dev/null 2>&1; then
 		MISSING_PC_MODULES+=("$module")
 	fi
 done
@@ -61,7 +110,7 @@ if (( ${#MISSING_PC_MODULES[@]} > 0 )); then
 	echo "pkg-config detailed errors:"
 	for module in "${MISSING_PC_MODULES[@]}"; do
 		echo "  [$module]"
-		"$PKG_CONFIG_BIN" --print-errors --exists "$module" || true
+		"$PKG_CONFIG_BIN" --print-errors --cflags-only-other "$module" || true
 	done
 	if [[ -f /usr/lib/pkgconfig/gl.pc ]]; then
 		echo "gl.pc exists at /usr/lib/pkgconfig/gl.pc"
@@ -72,12 +121,17 @@ if (( ${#MISSING_PC_MODULES[@]} > 0 )); then
 		echo "x11.pc is missing on disk at /usr/lib/pkgconfig/x11.pc"
 		echo "Tip: pacman package DB may be out of sync with filesystem."
 		echo "Run integrity check and force reinstall WITHOUT --needed."
-		echo "  sudo pacman -Qkk libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm"
-		echo "  sudo pacman -S --overwrite '*' pkgconf libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans"
+		echo "  sudo pacman -Qkk libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm libfontenc libice libsm libxaw libxcomposite libxdamage libxfixes libxkbfile libxmu libxpm libxrender libxres libxss libxt libxtst libxv xcb-util xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm util-linux-libs"
+		echo "  sudo pacman -S --overwrite '*' pkgconf libglvnd mesa libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm libfontenc libice libsm libxaw libxcomposite libxdamage libxfixes libxkbfile libxmu libxpm libxrender libxres libxss libxt libxtst libxv xcb-util xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm util-linux-libs xorgproto xtrans"
 	fi
-	echo "Install Linux/OpenGL/X11 development packages and retry:"
-	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans"
+	echo "Install Linux/OpenGL/X11/XCB development packages and retry:"
+	echo "  sudo pacman -Syu --needed pkgconf libglvnd mesa libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm libfontenc libice libsm libxaw libxcomposite libxdamage libxfixes libxkbfile libxmu libxpm libxrender libxres libxss libxt libxtst libxv xcb-util xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm util-linux-libs xorgproto xtrans"
 	exit 1
+fi
+
+if (( CHECK_ONLY == 1 )); then
+	echo "Dependency check complete: all required pkg-config modules are present."
+	exit 0
 fi
 
 echo "[2/7] Updating submodules..."
