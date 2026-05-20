@@ -1015,8 +1015,20 @@ DebugMenuProcess(void)
 	// We only process some input here
 
 	CPad *pad = CPad::GetPad(0);
-	if(CTRLJUSTDOWN('M'))
+	bool startPressed = !!pad->NewState.Start;
+	bool selectPressed = !!pad->NewState.Select;
+	bool startJustPressed = !!(pad->NewState.Start && !pad->OldState.Start);
+	bool selectJustPressed = !!(pad->NewState.Select && !pad->OldState.Select);
+	bool padToggleCombo = (startJustPressed && selectPressed) || (selectJustPressed && startPressed);
+
+	if(CTRLJUSTDOWN('M') || padToggleCombo){
 		menuOn = !menuOn;
+		// Avoid opening/closing frontend menu from Start in the same frame.
+		pad->OldState.Start = 0;
+		pad->NewState.Start = 0;
+		pad->OldState.Select = 0;
+		pad->NewState.Select = 0;
+	}
 	if(!menuOn)
 		return;
 

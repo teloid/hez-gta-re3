@@ -51,7 +51,7 @@ Some of them can be toggled at runtime, some cannot.
 * Fixed a lot of smaller and bigger bugs
 * User files (saves and settings) stored in GTA root directory
 * Settings stored in re3.ini file instead of gta3.set
-* Debug menu to do and change various things (Ctrl-M to open)
+* Debug menu to do and change various things (Ctrl-M or Start+Select to open)
 * Debug camera (Ctrl-B to toggle)
 * Rotatable camera
 * XInput controller support (Windows)
