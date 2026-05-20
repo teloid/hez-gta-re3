@@ -19,6 +19,19 @@ echo "[1/7] Checking prerequisites..."
 require_cmd git
 require_cmd python3
 require_cmd c++
+require_cmd pkg-config
+
+# Steam Deck builds are native Linux builds; a user-custom PKG_CONFIG_LIBDIR
+# can hide system pkg-config files like /usr/lib/pkgconfig/gl.pc.
+unset PKG_CONFIG_LIBDIR
+export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+
+if ! pkg-config --exists gl; then
+	echo "error: pkg-config cannot find 'gl' (gl.pc)."
+	echo "Install OpenGL development packages and retry:"
+	echo "  sudo pacman -Syu --needed libglvnd mesa pkgconf"
+	exit 1
+fi
 
 echo "[2/7] Updating submodules..."
 git submodule update --init --recursive

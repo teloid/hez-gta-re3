@@ -1,13 +1,23 @@
 <img src="https://github.com/hezkore/re3/blob/master/res/images/logo_1024.png?raw=true" alt="re3 logo" width="200">
 
 ## About this fork of re3
-This fork fixes some issues I've had with the original re3.\
-They're currently only applied to GTA 3.
+This fork focuses on making GTA III feel better to play and easier to debug/mod on modern handheld and desktop setups.
 
-* The camera now has the same vertical and horizontal speed.
-* The mouse is generally slower, letting you adjust the mouse sensitivity at a finer-granularity level.
-* Particles are no longer affected by framerate.\
-_(via a dirty fixed rate hack)_
+The main goals of this fork are:
+
+* Improve gameplay feel without changing the core game identity.
+* Make debug/cheat workflows accessible during normal play sessions.
+* Keep Linux/Steam Deck builds practical for contributors.
+
+Fork-specific changes (currently GTA III focused):
+
+* Camera now has matching vertical and horizontal speed.
+* Mouse is generally slower, allowing finer sensitivity tuning.
+* Particles are decoupled from framerate (fixed-rate style hack).
+* Debug menu can be opened with `Ctrl+M` or `Start+Select` (gamepad).
+* Added `build_deck.sh` for a Steam Deck oriented build flow with Conan 1.x and a guard that checks `DEBUGMENU` is enabled.
+
+If you are here for a controller-friendly debug build of GTA III, this is the point of this fork.
 
 ## Intro
 
@@ -103,7 +113,7 @@ Sorry for the inconvenience.
 
 When using premake, you may want to point GTA_III_RE_DIR environment variable to GTA3 root folder if you want the executable to be moved there via post-build script.
 
-Clone the repository with `git clone --recursive https://github.com/GTAmodding/re3.git`. Then `cd re3` into the cloned repository.
+Clone this fork with `git clone --recursive https://github.com/hezkore/re3.git`. Then `cd re3` into the cloned repository.
 
 <details><summary>Linux Premake</summary>
 
@@ -121,6 +131,12 @@ cd build
 conan install .. re3/master@ -if build -o re3:audio=openal -o librw:platform=gl3 -o librw:gl3_gfxlib=glfw --build missing -s re3:build_type=RelWithDebInfo -s librw:build_type=RelWithDebInfo
 conan build .. -if build -bf build -pf package
 ```
+
+For Steam Deck, this fork also provides:
+```
+./build_deck.sh
+```
+This script initializes submodules, installs Conan 1.x in a local virtualenv, and verifies the build config keeps `DEBUGMENU` enabled.
 </details>
 
 <details><summary>MacOS Premake</summary>
