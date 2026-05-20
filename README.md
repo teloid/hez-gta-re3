@@ -153,35 +153,16 @@ sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs
 
 <details><summary>Steam Deck: GTA VC (`miami`) branch</summary>
 
-From this fork root, switch to `miami`, apply the prepared patch, and build:
+`miami` branch already includes the same Steam Deck/debug workflow for Vice City.
+From this fork root:
 ```bash
-git remote get-url upstream >/dev/null 2>&1 || git remote add upstream https://github.com/Hezkore/hez-gta-re3.git
-git fetch upstream miami
-git switch -c miami --track upstream/miami
-patch -p1 < patch_miami_debugmenu_deck.patch
-chmod +x build_deck.sh
+git switch miami
+git pull --ff-only origin miami
 ./build_deck.sh --check-only
 ./build_deck.sh
 ```
 
-What this patch does on `miami`:
-* Enables debug menu toggle with `Ctrl+M` or gamepad `Select+B`.
-* Adds an Options-screen helper hint with the combo.
-* Adds `build_deck.sh` with Steam Deck dependency/toolchain preflight.
-* Updates `miami` README with Steam Deck build instructions.
-
-Output binary is `reVC` (Vice City).
-</details>
-
-<details><summary>Recovery: if patch was run on wrong branch</summary>
-
-If you accidentally ran `patch_miami_debugmenu_deck.patch` on `master` and got `.rej` files/prompts:
-```bash
-git restore README.md src/core/Frontend.cpp src/extras/debugmenu.cpp build_deck.sh
-rm -f README.md.rej src/core/Frontend.cpp.rej src/extras/debugmenu.cpp.rej
-```
-
-Then follow the `miami` section above exactly (ensure you are on `miami` first).
+Output binary on `miami`: `reVC`.
 </details>
 
 <details><summary>MacOS Premake</summary>
