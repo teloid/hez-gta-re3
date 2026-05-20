@@ -140,7 +140,7 @@ This script initializes submodules, installs Conan 1.x in a local virtualenv, va
 
 If your Deck image is missing development packages, install them once:
 ```
-sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans
+sudo pacman -Syu --needed libglvnd mesa pkgconf libx11 libxcb libxau libxdmcp libxext libxrandr libxi libxcursor libxinerama libxxf86vm xorgproto xtrans
 ```
 </details>
 
