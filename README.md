@@ -150,6 +150,27 @@ sudo pacman -S --overwrite '*' filesystem glibc linux-api-headers gcc gcc-libs
 ```
 </details>
 
+<details><summary>Steam Deck: GTA VC (`miami`) branch</summary>
+
+From this fork root, switch to `miami`, apply the prepared patch, and build:
+```bash
+git fetch upstream miami
+git switch -c miami --track upstream/miami
+patch -p1 < patch_miami_debugmenu_deck.patch
+chmod +x build_deck.sh
+./build_deck.sh --check-only
+./build_deck.sh
+```
+
+What this patch does on `miami`:
+* Enables debug menu toggle with `Ctrl+M` or gamepad `Select+B`.
+* Adds an Options-screen helper hint with the combo.
+* Adds `build_deck.sh` with Steam Deck dependency/toolchain preflight.
+* Updates `miami` README with Steam Deck build instructions.
+
+Output binary is `reVC` (Vice City).
+</details>
+
 <details><summary>MacOS Premake</summary>
 
 For MacOS using premake, proceed: [Building on MacOS](https://github.com/GTAmodding/re3/wiki/Building-on-MacOS)

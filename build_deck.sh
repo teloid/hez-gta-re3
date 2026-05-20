@@ -154,6 +154,13 @@ if (( CHECK_ONLY == 1 )); then
 	exit 0
 fi
 
+PACKAGE_NAME="$(sed -nE 's/^[[:space:]]*name[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' conanfile.py | head -n1)"
+if [[ -z "$PACKAGE_NAME" ]]; then
+	echo "error: could not detect Conan package name from conanfile.py"
+	echo "expected: name = \"re3\" (or \"reVC\" on miami branch)"
+	exit 1
+fi
+
 echo "[2/7] Updating submodules..."
 git submodule update --init --recursive
 if [[ ! -f vendor/librw/CMakeLists.txt ]]; then
@@ -208,13 +215,13 @@ conan export vendor/librw librw/master@
 
 echo "[6/7] Installing dependencies..."
 mkdir -p "$BUILD_DIR"
-conan install . re3/master@ \
+conan install . "$PACKAGE_NAME/master@" \
 	-if "$BUILD_DIR" \
-	-o re3:audio=openal \
+	-o "$PACKAGE_NAME:audio=openal" \
 	-o librw:platform=gl3 \
 	-o librw:gl3_gfxlib=glfw \
 	--build missing \
-	-s re3:build_type="$BUILD_TYPE" \
+	-s "$PACKAGE_NAME:build_type=$BUILD_TYPE" \
 	-s librw:build_type="$BUILD_TYPE"
 
 echo "[7/7] Building..."
@@ -224,4 +231,5 @@ echo
 echo "Build complete."
 echo "Build type: $BUILD_TYPE"
 echo "Build folder: $BUILD_DIR"
+echo "Conan package: $PACKAGE_NAME"
 echo "Debug menu check: PASS (DEBUGMENU enabled, MASTER disabled)"
