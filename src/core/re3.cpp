@@ -1018,6 +1018,9 @@ ApplyDebugFlyMode(CPlayerPed *player)
 void
 DebugMenuProcessGameplayModes(void)
 {
+	if(!bDebugGodMode && !bDebugFlyMode && !gGodPedSavedState.valid && !gGodVehSavedState.valid && !gFlySavedState.valid)
+		return;
+
 	CPlayerPed *player = FindPlayerPed();
 	ApplyDebugGodMode(player);
 	ApplyDebugFlyMode(player);
@@ -1293,8 +1296,6 @@ extern bool gbRenderWorld2;
 		DebugMenuAddVarBool8("Game", "Fly Mode", &bDebugFlyMode, nil);
 		DebugMenuAddVarBool8("Game", "Fly Noclip", &bDebugFlyNoClip, nil);
 		DebugMenuAddVar("Game", "Fly Speed", &fDebugFlySpeed, nil, 0.1f, 0.2f, 20.0f);
-		DebugMenuAddCmd("Game", "Fly Controls: LS move, R1/L1 up/down", nil);
-		DebugMenuAddCmd("Game", "Fly Boost: Sprint / Shift", nil);
 
 		DebugMenuAddVarBool8("Game", "Toggle popping heads on headshot", &CPed::bPopHeadsOnHeadshot, nil);
 
