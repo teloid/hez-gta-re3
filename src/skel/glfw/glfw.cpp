@@ -2196,19 +2196,40 @@ main(int argc, char *argv[])
 		TheMemoryCard.m_bWantToLoad = false;
 		
 		CTimer::Update();
-		
+
+#ifndef _WIN32
+		int steamDeckLoopFrames = 0;
+		bool ignoredEarlyDeckClose = false;
+#endif
+
 		while( !RsGlobal.quit && !(FrontEndMenuManager.m_bWantToRestart || TheMemoryCard.b_FoundRecentSavedGameWantToLoad) )
 #else
+#ifndef _WIN32
+		int steamDeckLoopFrames = 0;
+		bool ignoredEarlyDeckClose = false;
+#endif
+
 		while( !RsGlobal.quit && !FrontEndMenuManager.m_bWantToRestart )
 #endif
 		{
+#ifndef _WIN32
+			steamDeckLoopFrames++;
+#endif
 			glfwPollEvents();
 #ifndef _WIN32
 			if (glfwWindowShouldClose(PSGLOBAL(window)) && !RsGlobal.quit) {
 				const char *steamDeck = getenv("SteamDeck");
 				if (steamDeck && !strcmp(steamDeck, "1")) {
-					printf("[DBG]: Ignoring compositor close request in Steam Deck mode\n");
-					glfwSetWindowShouldClose(PSGLOBAL(window), GLFW_FALSE);
+					// In Steam Deck game mode we may receive an initial spurious close request
+					// during startup. Ignore only one early request, but always honor real exits.
+					bool inEarlyStartup = (gGameState <= GS_FRONTEND) && steamDeckLoopFrames < 900;
+					if (inEarlyStartup && !ignoredEarlyDeckClose) {
+						printf("[DBG]: Ignoring one early compositor close request in Steam Deck mode\n");
+						ignoredEarlyDeckClose = true;
+						glfwSetWindowShouldClose(PSGLOBAL(window), GLFW_FALSE);
+					} else {
+						RsGlobal.quit = TRUE;
+					}
 				} else {
 					RsGlobal.quit = TRUE;
 				}
