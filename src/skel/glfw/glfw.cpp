@@ -2197,12 +2197,26 @@ main(int argc, char *argv[])
 		
 		CTimer::Update();
 		
-		while( !RsGlobal.quit && !(FrontEndMenuManager.m_bWantToRestart || TheMemoryCard.b_FoundRecentSavedGameWantToLoad) && !glfwWindowShouldClose(PSGLOBAL(window)) )
+		while( !RsGlobal.quit && !(FrontEndMenuManager.m_bWantToRestart || TheMemoryCard.b_FoundRecentSavedGameWantToLoad) )
 #else
-		while( !RsGlobal.quit && !FrontEndMenuManager.m_bWantToRestart && !glfwWindowShouldClose(PSGLOBAL(window)))
+		while( !RsGlobal.quit && !FrontEndMenuManager.m_bWantToRestart )
 #endif
 		{
 			glfwPollEvents();
+#ifndef _WIN32
+			if (glfwWindowShouldClose(PSGLOBAL(window)) && !RsGlobal.quit) {
+				const char *steamDeck = getenv("SteamDeck");
+				if (steamDeck && !strcmp(steamDeck, "1")) {
+					printf("[DBG]: Ignoring compositor close request in Steam Deck mode\n");
+					glfwSetWindowShouldClose(PSGLOBAL(window), GLFW_FALSE);
+				} else {
+					RsGlobal.quit = TRUE;
+				}
+			}
+#else
+			if (glfwWindowShouldClose(PSGLOBAL(window)))
+				RsGlobal.quit = TRUE;
+#endif
 #ifdef GET_KEYBOARD_INPUT_FROM_X11
 			checkKeyPresses();
 #endif
@@ -2434,6 +2448,19 @@ main(int argc, char *argv[])
 		* About to shut down - block resize events again...
 		*/
 		RwInitialised = FALSE;
+#ifdef PS2_MENU
+		printf("[DBG]: Main loop exit flags quit=%d restart=%d windowclose=%d gameState=%u\n",
+			!!RsGlobal.quit,
+			!!(FrontEndMenuManager.m_bWantToRestart || TheMemoryCard.b_FoundRecentSavedGameWantToLoad),
+			!!glfwWindowShouldClose(PSGLOBAL(window)),
+			gGameState);
+#else
+		printf("[DBG]: Main loop exit flags quit=%d restart=%d windowclose=%d gameState=%u\n",
+			!!RsGlobal.quit,
+			!!FrontEndMenuManager.m_bWantToRestart,
+			!!glfwWindowShouldClose(PSGLOBAL(window)),
+			gGameState);
+#endif
 		
 		FrontEndMenuManager.UnloadTextures();
 #ifdef PS2_MENU	

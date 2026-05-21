@@ -4,6 +4,8 @@
 #include "Pad.h"
 #include "ControllerConfig.h"
 #include "Timer.h"
+#include "Frontend.h"
+#include "crossplatform.h"
 #include "rtcharse.h"
 #include "re3_inttypes.h"
 #include "debugmenu.h"
@@ -1033,9 +1035,14 @@ DebugMenuProcess(void)
 	bool selectJustPressed = !!(pad->NewState.Select && !pad->OldState.Select);
 	bool leftJustPressed = !!(pad->NewState.DPadLeft && !pad->OldState.DPadLeft);
 	bool bJustPressed = !!(pad->NewState.Circle && !pad->OldState.Circle);
+	static bool padComboArmed = false;
+	bool inGameplay = gGameState == GS_PLAYING_GAME && !FrontEndMenuManager.m_bMenuActive;
+	if(!padComboArmed && !startPressed && !selectPressed && !leftPressed && !bPressed)
+		padComboArmed = true;
 	bool padToggleCombo =
-		(startJustPressed && selectPressed) || (selectJustPressed && startPressed) ||
-		(leftJustPressed && bPressed) || (bJustPressed && leftPressed);
+		padComboArmed &&
+		((startJustPressed && selectPressed) || (selectJustPressed && startPressed) ||
+		 (inGameplay && ((leftJustPressed && bPressed) || (bJustPressed && leftPressed))));
 
 	if(CTRLJUSTDOWN('M') || padToggleCombo){
 		menuOn = !menuOn;
