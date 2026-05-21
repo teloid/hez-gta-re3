@@ -108,17 +108,29 @@ static bool
 HasGameDataInCurrentDir(void)
 {
 	static const char *datCandidates[] = {
+		"DATA/gta3.dat",
+		"DATA/gta_vc.dat",
 		"DATA/GTA3.DAT",
 		"DATA/GTA_VC.DAT",
 		"data/gta3.dat",
-		"data/gta_vc.dat"
+		"data/gta_vc.dat",
+		"Data/GTA3.DAT",
+		"Data/GTA_VC.DAT",
+		"Data/gta3.dat",
+		"Data/gta_vc.dat"
 	};
 	for (size_t i = 0; i < ARRAY_SIZE(datCandidates); i++) {
+#ifdef _WIN32
 		FILE *f = fcaseopen(datCandidates[i], "rb");
 		if (f != nil) {
 			fclose(f);
 			return true;
 		}
+#else
+		if (access(datCandidates[i], F_OK) == 0) {
+			return true;
+		}
+#endif
 	}
 	return false;
 }
@@ -909,6 +921,7 @@ psSelectDevice()
 		RwInt32 bestWidth = -1;
 		RwInt32 bestHeight = -1;
 		RwInt32 bestDepth = -1;
+		bestWndMode = -1;
 		for(GcurSelVM = 0; GcurSelVM < RwEngineGetNumVideoModes(); GcurSelVM++){
 			RwEngineGetVideoModeInfo(&vm, GcurSelVM);
 
@@ -928,10 +941,24 @@ psSelectDevice()
 		}
 
 		if(bestFsMode < 0){
-			printf("WARNING: Cannot find desired video mode, selecting device cancelled\n");
-			return FALSE;
+			// Some modern backends (notably macOS/GLFW) may expose only windowed modes.
+			// Fall back to windowed mode instead of aborting startup.
+			if(bestWndMode >= 0){
+				FrontEndMenuManager.m_nPrefsWindowed = 1;
+				FrontEndMenuManager.m_nSelectedScreenMode = 1;
+				GcurSelVM = bestWndMode;
+				RwEngineGetVideoModeInfo(&vm, GcurSelVM);
+				FrontEndMenuManager.m_nPrefsWidth = vm.width;
+				FrontEndMenuManager.m_nPrefsHeight = vm.height;
+				FrontEndMenuManager.m_nPrefsDepth = vm.depth;
+				printf("WARNING: Cannot find desired fullscreen mode, falling back to windowed mode\n");
+			}else{
+				printf("WARNING: Cannot find desired video mode, selecting device cancelled\n");
+				return FALSE;
+			}
+		}else{
+			GcurSelVM = bestFsMode;
 		}
-		GcurSelVM = bestFsMode;
 
 		FrontEndMenuManager.m_nDisplayVideoMode = GcurSelVM;
 		FrontEndMenuManager.m_nPrefsVideoMode = FrontEndMenuManager.m_nDisplayVideoMode;
@@ -943,7 +970,7 @@ psSelectDevice()
 	RwEngineGetVideoModeInfo(&vm, GcurSelVM);
 
 #ifdef IMPROVED_VIDEOMODE
-	if (FrontEndMenuManager.m_nPrefsWindowed)
+	if (FrontEndMenuManager.m_nPrefsWindowed && bestWndMode >= 0)
 		GcurSelVM = bestWndMode;
 
 	// Now GcurSelVM is 0 but vm has sizes(and fullscreen flag) of the video mode we want, that's why we changed the rwVIDEOMODEEXCLUSIVE conditions below
