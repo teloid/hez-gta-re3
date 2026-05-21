@@ -835,10 +835,20 @@ DebugMenuShutdown(void)
 void
 processInput(void)
 {
+	CPad *pad = CPad::GetPad(0);
 	int shift = KEYDOWN(rsRSHIFT) || KEYDOWN(rsLSHIFT);
 #define X(var, keycode) var = KEYJUSTDOWN(keycode);
 	MUHKEYS
 #undef X
+	// Gamepad navigation fallback: map D-pad arrows to menu arrows.
+	if(pad->GetDPadLeftJustDown())
+		leftjustdown = 1;
+	if(pad->GetDPadRightJustDown())
+		rightjustdown = 1;
+	if(pad->GetDPadUpJustDown())
+		upjustdown = 1;
+	if(pad->GetDPadDownJustDown())
+		downjustdown = 1;
 
 	// Implement auto-repeat
 #define X(var, keycode) \
@@ -1017,10 +1027,15 @@ DebugMenuProcess(void)
 	CPad *pad = CPad::GetPad(0);
 	bool startPressed = !!pad->NewState.Start;
 	bool selectPressed = !!pad->NewState.Select;
+	bool leftPressed = !!pad->NewState.DPadLeft;
+	bool bPressed = !!pad->NewState.Circle;
 	bool startJustPressed = !!(pad->NewState.Start && !pad->OldState.Start);
 	bool selectJustPressed = !!(pad->NewState.Select && !pad->OldState.Select);
+	bool leftJustPressed = !!(pad->NewState.DPadLeft && !pad->OldState.DPadLeft);
+	bool bJustPressed = !!(pad->NewState.Circle && !pad->OldState.Circle);
 	bool padToggleCombo =
-		(startJustPressed && selectPressed) || (selectJustPressed && startPressed);
+		(startJustPressed && selectPressed) || (selectJustPressed && startPressed) ||
+		(leftJustPressed && bPressed) || (bJustPressed && leftPressed);
 
 	if(CTRLJUSTDOWN('M') || padToggleCombo){
 		menuOn = !menuOn;
@@ -1029,6 +1044,10 @@ DebugMenuProcess(void)
 		pad->NewState.Start = 0;
 		pad->OldState.Select = 0;
 		pad->NewState.Select = 0;
+		pad->OldState.DPadLeft = 0;
+		pad->NewState.DPadLeft = 0;
+		pad->OldState.Circle = 0;
+		pad->NewState.Circle = 0;
 	}
 	if(!menuOn)
 		return;
