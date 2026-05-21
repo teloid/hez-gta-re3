@@ -194,28 +194,45 @@ myfeof(int fd)
 }
 
 
-char CFileMgr::ms_rootDirName[128] = {'\0'};
-char CFileMgr::ms_dirName[128];
+char CFileMgr::ms_rootDirName[CFileMgr::DIRNAMELEN] = {'\0'};
+char CFileMgr::ms_dirName[CFileMgr::DIRNAMELEN];
+
+static bool
+EndsWithSlash(const char *path)
+{
+	size_t len;
+	if(path == nil || path[0] == '\0')
+		return false;
+	len = strlen(path);
+	return path[len-1] == '\\' || path[len-1] == '/';
+}
 
 void
 CFileMgr::Initialise(void)
 {
-	_getcwd(ms_rootDirName, 128);
-	strcat(ms_rootDirName, "\\");
+	if(_getcwd(ms_rootDirName, DIRNAMELEN - 2) == nil){
+		strcpy(ms_rootDirName, ".");
+		printf("warning: getcwd failed, using current directory as root\n");
+	}
+	if(!EndsWithSlash(ms_rootDirName))
+		strcat(ms_rootDirName, "\\");
 }
 
 void
 CFileMgr::ChangeDir(const char *dir)
 {
-	if(*dir == '\\'){
-		strcpy(ms_dirName, ms_rootDirName);
+	if(*dir == '\\' || *dir == '/'){
+		snprintf(ms_dirName, DIRNAMELEN, "%s", ms_rootDirName);
 		dir++;
 	}
 	if(*dir != '\0'){
-		strcat(ms_dirName, dir);
+		size_t msDirLen = strlen(ms_dirName);
+		snprintf(ms_dirName + msDirLen, DIRNAMELEN - msDirLen, "%s", dir);
 		// BUG in the game it seems, it's off by one
-		if(dir[strlen(dir)-1] != '\\')
-			strcat(ms_dirName, "\\");
+		if(!EndsWithSlash(dir)){
+			msDirLen = strlen(ms_dirName);
+			snprintf(ms_dirName + msDirLen, DIRNAMELEN - msDirLen, "\\");
+		}
 	}
 	mychdir(ms_dirName);
 }
@@ -223,12 +240,15 @@ CFileMgr::ChangeDir(const char *dir)
 void
 CFileMgr::SetDir(const char *dir)
 {
-	strcpy(ms_dirName, ms_rootDirName);
+	snprintf(ms_dirName, DIRNAMELEN, "%s", ms_rootDirName);
 	if(*dir != '\0'){
-		strcat(ms_dirName, dir);
+		size_t msDirLen = strlen(ms_dirName);
+		snprintf(ms_dirName + msDirLen, DIRNAMELEN - msDirLen, "%s", dir);
 		// BUG in the game it seems, it's off by one
-		if(dir[strlen(dir)-1] != '\\')
-			strcat(ms_dirName, "\\");
+		if(!EndsWithSlash(dir)){
+			msDirLen = strlen(ms_dirName);
+			snprintf(ms_dirName + msDirLen, DIRNAMELEN - msDirLen, "\\");
+		}
 	}
 	mychdir(ms_dirName);
 }

@@ -47,6 +47,62 @@ std::queue<std::pair<IDecoder*, void*>> gStreamsToClose;
 #include "crossplatform.h"
 #endif
 
+#ifndef _WIN32
+static bool
+StartsWithNoCase(const char *str, const char *prefix)
+{
+	while(*prefix){
+		if(toupper((unsigned char)*str) != toupper((unsigned char)*prefix))
+			return false;
+		str++;
+		prefix++;
+	}
+	return true;
+}
+
+static bool
+ResolveAudioPath(const char *filename, char *out, size_t outSize)
+{
+	char candidate[MAX_PATH];
+	char *real;
+
+	// Steam macOS Cider layout keeps music tracks in ../../../Audio from GTAIII root.
+	if(StartsWithNoCase(filename, "AUDIO\\") || StartsWithNoCase(filename, "AUDIO/")){
+		const char *subPath = filename + 6;
+		const char *prefixes[] = {
+			"",
+			"../",
+			"../../",
+			"../../../",
+			"../../../../"
+		};
+
+		for(size_t i = 0; i < ARRAY_SIZE(prefixes); i++){
+			if(prefixes[i][0] == '\0')
+				snprintf(candidate, sizeof(candidate), "%s", filename);
+			else
+				snprintf(candidate, sizeof(candidate), "%sAudio/%s", prefixes[i], subPath);
+
+			real = casepath(candidate);
+			if(real){
+				snprintf(out, outSize, "%s", real);
+				free(real);
+				return true;
+			}
+		}
+	}
+
+	real = casepath(filename);
+	if(real){
+		snprintf(out, outSize, "%s", real);
+		free(real);
+		return true;
+	}
+
+	return false;
+}
+#endif
+
 /*
 As we ran onto an issue of having different volume levels for mono streams
 and stereo streams we are now handling all the stereo panning ourselves.
@@ -1186,15 +1242,11 @@ bool CStream::Open(const char* filename, uint32 overrideSampleRate)
 
 // Be case-insensitive on linux (from https://github.com/OneSadCookie/fcaseopen/)
 #if !defined(_WIN32)
-	char *real = casepath(filename);
-	if (real) {
-		strcpy(m_aFilename, real);
-		free(real);
-	} else {
+	if(!ResolveAudioPath(filename, m_aFilename, sizeof(m_aFilename))){
 #else
 	{
 #endif
-		strcpy(m_aFilename, filename);
+		snprintf(m_aFilename, sizeof(m_aFilename), "%s", filename);
 	}
 		
 	DEV("Stream %s\n", m_aFilename);

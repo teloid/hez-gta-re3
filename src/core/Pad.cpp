@@ -586,6 +586,31 @@ void CPad::UpdateMouse()
 		}
 	}
 #else
+	static int sCursorMode = -1;
+#ifdef GLFW_RAW_MOUSE_MOTION
+	static int sRawMouseMode = -1;
+#endif
+	int wantedCursorMode = FrontEndMenuManager.m_bMenuActive ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_DISABLED;
+
+	if (sCursorMode != wantedCursorMode) {
+		double xpos = 0.0, ypos = 0.0;
+		glfwSetInputMode(PSGLOBAL(window), GLFW_CURSOR, wantedCursorMode);
+		glfwGetCursorPos(PSGLOBAL(window), &xpos, &ypos);
+		PSGLOBAL(lastMousePos.x) = xpos;
+		PSGLOBAL(lastMousePos.y) = ypos;
+		sCursorMode = wantedCursorMode;
+	}
+
+#ifdef GLFW_RAW_MOUSE_MOTION
+	if (glfwRawMouseMotionSupported()) {
+		int wantedRawMouseMode = FrontEndMenuManager.m_bMenuActive ? GLFW_FALSE : GLFW_TRUE;
+		if (sRawMouseMode != wantedRawMouseMode) {
+			glfwSetInputMode(PSGLOBAL(window), GLFW_RAW_MOUSE_MOTION, wantedRawMouseMode);
+			sRawMouseMode = wantedRawMouseMode;
+		}
+	}
+#endif
+
 	if ( IsForegroundApp() && PSGLOBAL(cursorIsInWindow) )
 	{
 		double xpos = 1.0f, ypos;

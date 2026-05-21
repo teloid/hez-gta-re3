@@ -207,11 +207,13 @@ void _psCreateFolder(const char *path)
 #else
 	struct stat info;
 	char fullpath[PATH_MAX];
-	realpath(path, fullpath);
+	const char *targetPath = path;
+	if (realpath(path, fullpath) != nil)
+		targetPath = fullpath;
 
-	if (lstat(fullpath, &info) != 0) {
+	if (lstat(targetPath, &info) != 0) {
 		if (errno == ENOENT || (errno != EACCES && !S_ISDIR(info.st_mode))) {
-			mkdir(fullpath, 0755);
+			mkdir(targetPath, 0755);
 		}
 	}
 #endif
@@ -953,8 +955,19 @@ psSelectDevice()
 				FrontEndMenuManager.m_nPrefsDepth = vm.depth;
 				printf("WARNING: Cannot find desired fullscreen mode, falling back to windowed mode\n");
 			}else{
-				printf("WARNING: Cannot find desired video mode, selecting device cancelled\n");
-				return FALSE;
+				if(RwEngineGetNumVideoModes() > 0){
+					GcurSelVM = 0;
+					RwEngineGetVideoModeInfo(&vm, GcurSelVM);
+					FrontEndMenuManager.m_nPrefsWindowed = !(vm.flags & rwVIDEOMODEEXCLUSIVE);
+					FrontEndMenuManager.m_nSelectedScreenMode = FrontEndMenuManager.m_nPrefsWindowed;
+					FrontEndMenuManager.m_nPrefsWidth = vm.width;
+					FrontEndMenuManager.m_nPrefsHeight = vm.height;
+					FrontEndMenuManager.m_nPrefsDepth = vm.depth;
+					printf("WARNING: Cannot find desired video mode, using mode 0 as fallback\n");
+				}else{
+					printf("WARNING: No video modes available, selecting device cancelled\n");
+					return FALSE;
+				}
 			}
 		}else{
 			GcurSelVM = bestFsMode;
