@@ -156,7 +156,7 @@ Running from Steam with a native Linux build:
 # In Steam game properties for GTA III:
 # Compatibility: OFF (do not force Proton)
 # Launch Options:
-"/home/deck/.local/share/Steam/steamapps/common/Grand Theft Auto 3/run_re3_steam.sh" # %command%
+"/home/deck/.local/share/Steam/steamapps/common/Grand Theft Auto 3/run_re3_steam.sh" %command%
 ```
 Use `deploy_steam_native.sh` (or `build_deck.sh --steam-deploy ...`) to install a native launcher wrapper. Replacing `gta3.exe` with the raw Linux `re3` binary is not reliable under Proton-oriented launch flows.
 </details>

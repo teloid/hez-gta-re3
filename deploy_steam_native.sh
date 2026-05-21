@@ -32,7 +32,8 @@ cat > "$GAME_DIR/gta3.exe" <<'EOF'
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
-exec ./re3 "$@"
+# Ignore Steam/Proton passthrough args and run native binary directly.
+exec ./re3
 EOF
 chmod +x "$GAME_DIR/gta3.exe"
 
@@ -42,7 +43,8 @@ set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 unset LD_PRELOAD
-exec ./re3 "$@"
+# Ignore Steam's %command% passthrough args.
+exec ./re3
 EOF
 chmod +x "$GAME_DIR/run_re3_steam.sh"
 
@@ -55,7 +57,7 @@ Installed:
 Steam setup (recommended):
   1) GTA III -> Properties -> Compatibility -> disable forced Proton.
   2) GTA III -> Properties -> General -> Launch Options:
-     "$GAME_DIR/run_re3_steam.sh" # %command%
+     "$GAME_DIR/run_re3_steam.sh" %command%
 
 If Steam still fails to launch, try adding it as a Non-Steam game:
   $GAME_DIR/run_re3_steam.sh
