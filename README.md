@@ -136,6 +136,7 @@ For Steam Deck, this fork also provides:
 ```
 ./build_deck.sh
 ./build_deck.sh --check-only
+./build_deck.sh --steam-deploy "$HOME/.local/share/Steam/steamapps/common/Grand Theft Auto 3"
 ```
 This script initializes submodules, installs Conan 1.x in a local virtualenv, validates required `pkg-config` modules for OpenGL/X11/XCB, and verifies the build config keeps `DEBUGMENU` enabled. Use `--check-only` to validate system dependencies without starting a build.
 On `master`, output binary is `re3` (GTA III).
@@ -155,9 +156,9 @@ Running from Steam with a native Linux build:
 # In Steam game properties for GTA III:
 # Compatibility: OFF (do not force Proton)
 # Launch Options:
-cd "/path/to/GTA3" && "/path/to/re3"
+"/home/deck/.local/share/Steam/steamapps/common/Grand Theft Auto 3/run_re3_steam.sh" # %command%
 ```
-Do not replace `gta3.exe` with the Linux `re3` binary. `gta3.exe` is used by Proton/Windows runtime, while `re3` built here is a native Linux executable.
+Use `deploy_steam_native.sh` (or `build_deck.sh --steam-deploy ...`) to install a native launcher wrapper. Replacing `gta3.exe` with the raw Linux `re3` binary is not reliable under Proton-oriented launch flows.
 </details>
 
 <details><summary>Steam Deck: GTA VC (`miami`) branch</summary>

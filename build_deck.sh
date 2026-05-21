@@ -8,10 +8,32 @@ BUILD_DIR="${BUILD_DIR:-build}"
 BUILD_TYPE="${BUILD_TYPE:-RelWithDebInfo}"
 VENV_DIR="${VENV_DIR:-.venv-deck-build}"
 CHECK_ONLY=0
+STEAM_DEPLOY_DIR=""
 
-if [[ "${1:-}" == "--check-only" ]]; then
-	CHECK_ONLY=1
-fi
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		--check-only)
+			CHECK_ONLY=1
+			;;
+		--steam-deploy)
+			shift
+			if [[ $# -eq 0 ]]; then
+				echo "error: --steam-deploy requires a path argument"
+				exit 1
+			fi
+			STEAM_DEPLOY_DIR="$1"
+			;;
+		--steam-deploy=*)
+			STEAM_DEPLOY_DIR="${1#*=}"
+			;;
+		*)
+			echo "error: unknown argument: $1"
+			echo "usage: $0 [--check-only] [--steam-deploy <path>]"
+			exit 1
+			;;
+	esac
+	shift
+done
 
 require_cmd() {
 	if ! command -v "$1" >/dev/null 2>&1; then
@@ -150,6 +172,10 @@ if (( ${#MISSING_PC_MODULES[@]} > 0 )); then
 fi
 
 if (( CHECK_ONLY == 1 )); then
+	if [[ -n "$STEAM_DEPLOY_DIR" ]]; then
+		echo "error: --steam-deploy cannot be used together with --check-only"
+		exit 1
+	fi
 	echo "Dependency check complete: all required pkg-config modules are present."
 	exit 0
 fi
@@ -233,3 +259,15 @@ echo "Build type: $BUILD_TYPE"
 echo "Build folder: $BUILD_DIR"
 echo "Conan package: $PACKAGE_NAME"
 echo "Debug menu check: PASS (DEBUGMENU enabled, MASTER disabled)"
+
+if [[ -n "$STEAM_DEPLOY_DIR" ]]; then
+	BINARY_PATH="$(find "$BUILD_DIR" -type f -name "$PACKAGE_NAME" -perm -u+x | head -n1 || true)"
+	if [[ -z "$BINARY_PATH" ]]; then
+		echo "error: built binary '$PACKAGE_NAME' not found under $BUILD_DIR"
+		exit 1
+	fi
+
+	echo
+	echo "Deploying to Steam game directory..."
+	./deploy_steam_native.sh "$STEAM_DEPLOY_DIR" "$BINARY_PATH"
+fi
